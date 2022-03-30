@@ -48,35 +48,6 @@ namespace MirrorsExperiment
             }
         }
 
-        // Проекция точки на прямую
-        private Point project(Point line1, Point line2, Point toProject)
-        {
-            double m = (double)(line2.Y - line1.Y) / (line2.X - line1.X);
-            double b = (double)line1.Y - (m * line1.X);
-
-            double x = (m * toProject.Y + toProject.X - m * b) / (m * m + 1);
-            double y = (m * m * toProject.Y + m * toProject.X + b) / (m * m + 1);
-
-            return new Point((int)x, (int)y);
-        }
-
-        // Расстояние между точками
-        private double distance(Point p1, Point p2)
-        {
-            return Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
-        }
-
-        // Проверка на вложенность точки в прямоугольник
-        private bool inside(Point p, Point p1, Point p2)
-        {
-            double xmax = Math.Max(p1.X, p2.X);
-            double xmin = Math.Min(p1.X, p2.X);
-            double ymax = Math.Max(p1.Y, p2.Y);
-            double ymin = Math.Min(p1.Y, p2.Y);
-            return p.X <= xmax && p.X >= xmin &&
-                p.Y <= ymax && p.Y >= ymin;
-        }
-
         private bool down = false;
         private int pointIndex = -1;
         private Point old;
@@ -91,7 +62,7 @@ namespace MirrorsExperiment
             {
                 Point p1 = e.Location;
                 Point p2 = Experiment.Room.Walls[i].P1;
-                if (distance(p1, p2) < R && e.Button.HasFlag(MouseButtons.Left))
+                if (MyExtensions.PointDistance(p1, p2) < R && e.Button.HasFlag(MouseButtons.Left))
                 {
                     pointIndex = i;
                     old = p1;
@@ -103,10 +74,10 @@ namespace MirrorsExperiment
                 Point p1 = e.Location;
                 Point p2 = Experiment.Room.Walls[i].P1;
                 Point p3 = Experiment.Room.Walls[i].P2;
-                Point p4 = project(p2, p3, p1);
-                if (inside(p4, p2, p3) && distance(p1, p4) < R)
+                Point p4 = MyExtensions.PointToSegmentProject(p2, p3, p1);
+                if (MyExtensions.PointInRect(p4, p2, p3) && MyExtensions.PointDistance(p1, p4) < R)
                 {
-                    if (e.Button.HasFlag(MouseButtons.Right))
+                    if (e.Button.HasFlag(MouseButtons.Left))
                     {
                         segmentIndex = i;
                         source = p4;
@@ -114,11 +85,7 @@ namespace MirrorsExperiment
                     }
                     else
                     {
-                        Form2 f = new Form2();
-                        if (f.ShowDialog() == DialogResult.OK)
-                        {
-
-                        }
+                        
                     }
                     return;
                 }
@@ -144,11 +111,16 @@ namespace MirrorsExperiment
                 }
                 else if (segmentIndex >= 0)
                 {
-                    Point p1 = e.Location;
-                    Point p2 = Experiment.Room.Walls[segmentIndex].P1;
-                    Point p3 = Experiment.Room.Walls[segmentIndex].P2;
-                    Point p4 = project(p2, p3, p1);
-                    drawPanel.Invalidate();
+                    if (Experiment.Room.Walls[segmentIndex] is SphericalMirror wall)
+                    {
+                        Point p1 = e.Location;
+                        Point p2 = wall.P1;
+                        Point p3 = wall.P2;
+                        Point segCenter = new Point((p2.X + p3.X)/2, (p2.Y + p3.Y)/2);
+                        //wall.Radius = ;
+                        //Point p4 = project(p2, p3, p1);
+                        drawPanel.Invalidate();
+                    }
                 }
                 old = e.Location;
             }

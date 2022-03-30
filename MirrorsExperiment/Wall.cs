@@ -7,6 +7,8 @@ namespace MirrorsExperiment
         public Point P1;
         public Point P2;
 
+        public Point SegmentCenter => new Point((P1.X + P2.X) / 2, (P1.Y + P2.Y) / 2);
+
         public Wall(Point p1, Point p2)
         {
             P1 = p1;
