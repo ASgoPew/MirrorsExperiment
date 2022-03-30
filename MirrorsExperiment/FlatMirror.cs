@@ -14,5 +14,11 @@ namespace MirrorsExperiment
         {
 
         }
+
+        public override void Draw(Graphics g)
+        {
+            Pen pen = new Pen(Color.Black, 3);
+            g.DrawLine(pen, P1, P2);
+        }
     }
 }

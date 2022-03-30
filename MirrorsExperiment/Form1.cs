@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -17,6 +18,7 @@ namespace MirrorsExperiment
         public Form1()
         {
             InitializeComponent();
+            drawPanel.SetDoubleBuffered();
             timer.Elapsed += Timer_Elapsed;
         }
 
@@ -40,7 +42,7 @@ namespace MirrorsExperiment
             foreach (Wall wall in Experiment.Room.Walls)
             {
                 e.Graphics.FillEllipse(Brushes.Red, wall.P1.X - R, wall.P1.Y - R, 2 * R, 2 * R);
-                e.Graphics.DrawLine(pen, wall.P1, wall.P2);
+                wall.Draw(e.Graphics);
                 if (segmentIndex >= 0)
                     e.Graphics.DrawLine(pen, source, old);
             }

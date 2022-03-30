@@ -25,7 +25,7 @@ namespace MirrorsExperiment
             Point p4 = new Point(Random.Next(panel.Width / 2, panel.Width), Random.Next(0, panel.Height / 2));
             Room.Walls.Add(new FlatMirror(p1, p2));
             Room.Walls.Add(new FlatMirror(p2, p3));
-            Room.Walls.Add(new FlatMirror(p3, p4));
+            Room.Walls.Add(new SphericalMirror(p3, p4));
             Room.Walls.Add(new FlatMirror(p4, p1));
         }
     }
