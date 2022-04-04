@@ -39,6 +39,13 @@ namespace MirrorsExperiment
             return Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
         }
 
+        public static int LineSide(Point line1, Point line2, Point p)
+        {
+            float result = (line2.Y - line1.Y) * p.X + (line1.X - line2.X) * p.Y +
+                line1.Y * line2.X - line1.X * line2.Y;
+            return result >= 0 ? 1 : -1;
+        }
+
         // Проверка на вложенность точки в прямоугольник
         public static bool PointInRect(Point p, Point p1, Point p2)
         {

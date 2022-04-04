@@ -43,59 +43,96 @@ namespace MirrorsExperiment
             {
                 e.Graphics.FillEllipse(Brushes.Red, wall.P1.X - R, wall.P1.Y - R, 2 * R, 2 * R);
                 wall.Draw(e.Graphics);
-                if (segmentIndex >= 0)
-                    e.Graphics.DrawLine(pen, source, old);
             }
+            if (source is Point p)
+                e.Graphics.DrawLine(pen, p, old);
+            if (tmp != null)
+                e.Graphics.DrawString(tmp, SystemFonts.DefaultFont, Brushes.Black, 100, 30);
+        }
+
+        private string tmp = null;
+        private void show(string text)
+        {
+            tmp = text;
+            drawPanel.Invalidate();
         }
 
         private bool down = false;
         private int pointIndex = -1;
         private Point old;
         private int segmentIndex = -1;
-        private Point source;
+        private Point? source = null;
         // Обработка начала нажатия
         private void drawPanel_MouseDown(object sender, MouseEventArgs e)
         {
             const int R = 10;
-            down = true;
+            // Moving points
             for (int i = 0; i < Experiment.Room.Walls.Count; i++)
             {
                 Point p1 = e.Location;
                 Point p2 = Experiment.Room.Walls[i].P1;
                 if (MyExtensions.PointDistance(p1, p2) < R && e.Button.HasFlag(MouseButtons.Left))
                 {
+                    down = true;
                     pointIndex = i;
                     old = p1;
                     return;
                 }
             }
+
+            // Changing spherical mirror radius or type
             for (int i = 0; i < Experiment.Room.Walls.Count; i++)
-            {
-                Point p1 = e.Location;
-                Point p2 = Experiment.Room.Walls[i].P1;
-                Point p3 = Experiment.Room.Walls[i].P2;
-                Point p4 = MyExtensions.PointToSegmentProject(p2, p3, p1);
-                if (MyExtensions.PointInRect(p4, p2, p3) && MyExtensions.PointDistance(p1, p4) < R)
+                if (Experiment.Room.Walls[i] is SphericalMirror mirror)
                 {
-                    if (e.Button.HasFlag(MouseButtons.Left))
+                    Point p1 = e.Location;
+                    Point p2 = mirror.P3;
+                    if (MyExtensions.PointDistance(p1, p2) < R)
                     {
-                        segmentIndex = i;
-                        source = p4;
-                        drawPanel.Invalidate();
+                        if (e.Button.HasFlag(MouseButtons.Left))
+                        {
+                            down = true;
+                            segmentIndex = i;
+                            old = p1;
+                            return;
+                        }
+                        else if (e.Button.HasFlag(MouseButtons.Middle))
+                        {
+                            Experiment.Room.Walls[i] = new FlatMirror(mirror.P1, mirror.P2);
+                            drawPanel.Invalidate();
+                            return;
+                        }
                     }
-                    else
-                    {
-                        
-                    }
-                    return;
                 }
+
+            // Change flat wall type
+            if (e.Button.HasFlag(MouseButtons.Middle))
+                for (int i = 0; i < Experiment.Room.Walls.Count; i++)
+                    if (Experiment.Room.Walls[i] is FlatMirror wall)
+                    {
+                        Point p1 = e.Location;
+                        Point p2 = wall.P1;
+                        Point p3 = wall.P2;
+                        Point p4 = MyExtensions.PointToSegmentProject(p2, p3, p1);
+                        if (MyExtensions.PointInRect(p4, p2, p3) && MyExtensions.PointDistance(p1, p4) < R)
+                        {
+                            Experiment.Room.Walls[i] = new SphericalMirror(p2, p3, 10000);
+                            drawPanel.Invalidate();
+                            return;
+                        }
+                    }
+
+            // Light source
+            if (e.Button.HasFlag(MouseButtons.Right))
+            {
+                down = true;
+                source = e.Location;
+                old = e.Location;
             }
         }
 
         // Обработка перемещающегося нажатия
         private void drawPanel_MouseMove(object sender, MouseEventArgs e)
         {
-            const int R = 10;
             if (down)
             {
                 if (pointIndex >= 0)
@@ -111,16 +148,19 @@ namespace MirrorsExperiment
                 }
                 else if (segmentIndex >= 0)
                 {
-                    if (Experiment.Room.Walls[segmentIndex] is SphericalMirror wall)
-                    {
-                        Point p1 = e.Location;
-                        Point p2 = wall.P1;
-                        Point p3 = wall.P2;
-                        Point segCenter = new Point((p2.X + p3.X)/2, (p2.Y + p3.Y)/2);
-                        //wall.Radius = ;
-                        //Point p4 = project(p2, p3, p1);
-                        drawPanel.Invalidate();
-                    }
+                    SphericalMirror mirror = (SphericalMirror)Experiment.Room.Walls[segmentIndex];
+                    Point p1 = e.Location;
+                    Point p2 = mirror.P1;
+                    Point p3 = mirror.P2;
+                    float r = (float)MyExtensions.PointDistance(p2, p3) / 2f;
+                    Point C = MyExtensions.PointToSegmentProject(p2, p3, p1);
+                    float d = (float)Math.Min(MyExtensions.PointDistance(p1, C), r);
+                    mirror.Radius = (-MyExtensions.LineSide(p2, p3, p1)) * (r * r + d * d) / (2 * d);
+                    drawPanel.Invalidate();
+                }
+                else if (source != null)
+                {
+                    drawPanel.Invalidate();
                 }
                 old = e.Location;
             }
@@ -132,6 +172,11 @@ namespace MirrorsExperiment
             down = false;
             pointIndex = -1;
             segmentIndex = -1;
+            if (source is Point p && MyExtensions.PointDistance(e.Location, p) < 10)
+            {
+                source = null;
+                drawPanel.Invalidate();
+            }
         }
     }
 }
