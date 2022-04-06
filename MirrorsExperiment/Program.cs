@@ -14,11 +14,17 @@ namespace MirrorsExperiment
         [STAThread]
         static void Main()
         {
+            do
+            {
+                MyExtensions.machine_epsilon /= 2.0d;
+            }
+            while ((double)(1.0 + MyExtensions.machine_epsilon) != 1.0);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             Form1 form1 = new Form1();
-            Experiment.InitializeRoom(form1, 4);
+            Experiment experiment = new Experiment(form1.drawPanel, 4);
 
             Application.Run(form1);
         }

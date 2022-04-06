@@ -55,7 +55,6 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="LightBeam.cs" />
-    <Compile Include="LightSource.cs" />
     <Compile Include="MyExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -13,7 +13,7 @@ namespace MirrorsExperiment
 {
     public partial class Form1 : Form
     {
-        public System.Timers.Timer timer = new System.Timers.Timer(30);
+        public System.Timers.Timer timer = new System.Timers.Timer(10);
 
         public Form1()
         {
@@ -25,13 +25,33 @@ namespace MirrorsExperiment
         // Расчет лучей по таймеру
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            
+            LightBeam light = Experiment.Instances[drawPanel].LightSource;
+            int count = 0;
+            while (light.Next != null)
+            {
+                light = light.Next;
+                count++;
+            }
+            show($"light beams: {count}");
+            light.GenerateNext(Experiment.Instances[drawPanel]);
+            drawPanel.Invalidate();
         }
 
         // Кнопка запуска моделирования
         private void buttonStart_Click(object sender, EventArgs e)
         {
-            timer.Start();
+            if (timer.Enabled)
+                timer.Stop();
+            else
+            {
+                source = null;
+                if (Experiment.Instances[drawPanel].LightSource is LightBeam light)
+                {
+                    light.CalculateEnd(Experiment.Instances[drawPanel]);
+                    drawPanel.Invalidate();
+                }
+                timer.Start();
+            }
         }
 
         // Отрисовка моделируемой комнаты
@@ -39,7 +59,7 @@ namespace MirrorsExperiment
         {
             const int R = 5;
             Pen pen = new Pen(Color.Black, 3);
-            foreach (Wall wall in Experiment.Room.Walls)
+            foreach (Wall wall in Experiment.Instances[sender].Room.Walls)
             {
                 e.Graphics.FillEllipse(Brushes.Red, wall.P1.X - R, wall.P1.Y - R, 2 * R, 2 * R);
                 wall.Draw(e.Graphics);
@@ -48,6 +68,14 @@ namespace MirrorsExperiment
                 e.Graphics.DrawLine(pen, p, old);
             if (tmp != null)
                 e.Graphics.DrawString(tmp, SystemFonts.DefaultFont, Brushes.Black, 100, 30);
+            if (Experiment.Instances[sender].LightSource is LightBeam light)
+            {
+                while (light != null)
+                {
+                    e.Graphics.DrawLine(new Pen(Color.DeepSkyBlue, 2), light.P1, light.P2);
+                    light = light.Next;
+                }
+            }
         }
 
         private string tmp = null;
@@ -67,10 +95,10 @@ namespace MirrorsExperiment
         {
             const int R = 10;
             // Moving points
-            for (int i = 0; i < Experiment.Room.Walls.Count; i++)
+            for (int i = 0; i < Experiment.Instances[sender].Room.Walls.Count; i++)
             {
                 Point p1 = e.Location;
-                Point p2 = Experiment.Room.Walls[i].P1;
+                Point p2 = Experiment.Instances[sender].Room.Walls[i].P1;
                 if (MyExtensions.PointDistance(p1, p2) < R && e.Button.HasFlag(MouseButtons.Left))
                 {
                     down = true;
@@ -81,8 +109,8 @@ namespace MirrorsExperiment
             }
 
             // Changing spherical mirror radius or type
-            for (int i = 0; i < Experiment.Room.Walls.Count; i++)
-                if (Experiment.Room.Walls[i] is SphericalMirror mirror)
+            for (int i = 0; i < Experiment.Instances[sender].Room.Walls.Count; i++)
+                if (Experiment.Instances[sender].Room.Walls[i] is SphericalMirror mirror)
                 {
                     Point p1 = e.Location;
                     Point p2 = mirror.P3;
@@ -97,7 +125,7 @@ namespace MirrorsExperiment
                         }
                         else if (e.Button.HasFlag(MouseButtons.Middle))
                         {
-                            Experiment.Room.Walls[i] = new FlatMirror(mirror.P1, mirror.P2);
+                            Experiment.Instances[sender].Room.Walls[i] = new FlatMirror(mirror.P1, mirror.P2);
                             drawPanel.Invalidate();
                             return;
                         }
@@ -106,8 +134,8 @@ namespace MirrorsExperiment
 
             // Change flat wall type
             if (e.Button.HasFlag(MouseButtons.Middle))
-                for (int i = 0; i < Experiment.Room.Walls.Count; i++)
-                    if (Experiment.Room.Walls[i] is FlatMirror wall)
+                for (int i = 0; i < Experiment.Instances[sender].Room.Walls.Count; i++)
+                    if (Experiment.Instances[sender].Room.Walls[i] is FlatMirror wall)
                     {
                         Point p1 = e.Location;
                         Point p2 = wall.P1;
@@ -115,7 +143,7 @@ namespace MirrorsExperiment
                         Point p4 = MyExtensions.PointToSegmentProject(p2, p3, p1);
                         if (MyExtensions.PointInRect(p4, p2, p3) && MyExtensions.PointDistance(p1, p4) < R)
                         {
-                            Experiment.Room.Walls[i] = new SphericalMirror(p2, p3, 10000);
+                            Experiment.Instances[sender].Room.Walls[i] = new SphericalMirror(p2, p3, 10000);
                             drawPanel.Invalidate();
                             return;
                         }
@@ -137,9 +165,9 @@ namespace MirrorsExperiment
             {
                 if (pointIndex >= 0)
                 {
-                    Wall w1 = Experiment.Room.Walls[pointIndex];
-                    Wall w2 = Experiment.Room.Walls[(pointIndex + Experiment.Room.Walls.Count - 1)
-                        % Experiment.Room.Walls.Count];
+                    Wall w1 = Experiment.Instances[sender].Room.Walls[pointIndex];
+                    Wall w2 = Experiment.Instances[sender].Room.Walls[(pointIndex + Experiment.Instances[sender].Room.Walls.Count - 1)
+                        % Experiment.Instances[sender].Room.Walls.Count];
                     w1.P1.X += e.X - old.X;
                     w1.P1.Y += e.Y - old.Y;
                     w2.P2.X += e.X - old.X;
@@ -148,7 +176,7 @@ namespace MirrorsExperiment
                 }
                 else if (segmentIndex >= 0)
                 {
-                    SphericalMirror mirror = (SphericalMirror)Experiment.Room.Walls[segmentIndex];
+                    SphericalMirror mirror = (SphericalMirror)Experiment.Instances[sender].Room.Walls[segmentIndex];
                     Point p1 = e.Location;
                     Point p2 = mirror.P1;
                     Point p3 = mirror.P2;
@@ -172,11 +200,22 @@ namespace MirrorsExperiment
             down = false;
             pointIndex = -1;
             segmentIndex = -1;
-            if (source is Point p && MyExtensions.PointDistance(e.Location, p) < 10)
+            if (source is Point lightSource)
             {
-                source = null;
-                drawPanel.Invalidate();
+                if (MyExtensions.PointDistance(e.Location, lightSource) < 10) {
+                    source = null;
+                    Experiment.Instances[sender].LightSource = null;
+                    drawPanel.Invalidate();
+                }
+                else
+                {
+                    Experiment.Instances[sender].LightSource = new LightBeam(lightSource, e.Location);
+                    Experiment.Instances[sender].LightSource.CalculateEnd(Experiment.Instances[sender]);
+                    drawPanel.Invalidate();
+                }
             }
+            else
+                Experiment.Instances[sender].LightSource = null;
         }
     }
 }

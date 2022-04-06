@@ -8,27 +8,32 @@ using System.Windows.Forms;
 
 namespace MirrorsExperiment
 {
-    public static class Experiment
+    public class Experiment
     {
-        public static Random Random = new Random();
-        public static Room Room = new Room();
-        public static LightSource LightSource = new LightSource();
+        public static Dictionary<object, Experiment> Instances = new Dictionary<object, Experiment>();
+
+        public Random Random = new Random();
+        public Room Room = new Room();
+        public LightBeam LightSource = null;
 
         // Инициализация комнаты начальными параметрами
-        public static void InitializeRoom(Form1 form1, int wallsCount)
+        public Experiment(Panel drawPanel, int wallsCount)
         {
+            Instances[drawPanel] = this;
+
             Room.Walls.Clear();
-            Panel panel = form1.drawPanel;
-            Point p1 = new Point(Random.Next(0, panel.Width / 2), Random.Next(0, panel.Height / 2));
-            Point p2 = new Point(Random.Next(0, panel.Width / 2), Random.Next(panel.Height / 2, panel.Height));
-            Point p3 = new Point(Random.Next(panel.Width / 2, panel.Width), Random.Next(panel.Height / 2, panel.Height));
-            Point p4 = new Point(Random.Next(panel.Width / 2, panel.Width), Random.Next(0, panel.Height / 2));
-            Point p5 = new Point(Random.Next(panel.Width / 2, panel.Width), Random.Next(0, panel.Height / 2));
+            Point p1 = new Point(Random.Next(0, drawPanel.Width / 2), Random.Next(0, drawPanel.Height / 2));
+            Point p2 = new Point(Random.Next(0, drawPanel.Width / 2), Random.Next(drawPanel.Height / 2, drawPanel.Height));
+            Point p3 = new Point(Random.Next(drawPanel.Width / 2, drawPanel.Width), Random.Next(drawPanel.Height / 2, drawPanel.Height));
+            Point p4 = new Point(Random.Next(drawPanel.Width / 2, drawPanel.Width), Random.Next(0, drawPanel.Height / 2));
+            Point p5 = new Point(Random.Next(drawPanel.Width / 2, drawPanel.Width), Random.Next(0, drawPanel.Height / 2));
             Room.Walls.Add(new FlatMirror(p1, p2));
             Room.Walls.Add(new FlatMirror(p2, p3));
-            Room.Walls.Add(new SphericalMirror(p3, p4, 0));
+            //Room.Walls.Add(new SphericalMirror(p3, p4, 0));
+            Room.Walls.Add(new FlatMirror(p3, p4));
             Room.Walls.Add(new FlatMirror(p4, p5));
-            Room.Walls.Add(new SphericalMirror(p5, p1, 0));
+            //Room.Walls.Add(new SphericalMirror(p5, p1, 0));
+            Room.Walls.Add(new FlatMirror(p5, p1));
         }
     }
 }
