@@ -16,5 +16,7 @@ namespace MirrorsExperiment
         }
 
         public abstract void Draw(Graphics g);
+
+        public abstract bool Intersect(Point p1, Point p2, ref PointF intersection);
     }
 }

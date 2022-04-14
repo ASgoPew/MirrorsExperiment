@@ -36,30 +36,25 @@ namespace MirrorsExperiment
             p2.X += (int)(Math.Cos(Angle * Math.PI / 180) * VectorLen);
             p2.Y += (int)(Math.Sin(Angle * Math.PI / 180) * VectorLen);
 
+            //PointF intersection = new PointF();
             PointF closest = p2;
             foreach (var wall in experiment.Room.Walls)
-                if (wall != CurrentWall)
+            {
+                PointF intersection = new PointF();
+                if (wall != CurrentWall && wall.Intersect(P1, p2, ref intersection)
+                    && MyExtensions.PointDistance(P1, intersection) < MyExtensions.PointDistance(P1, closest))
                 {
-                    if (wall is FlatMirror flat)
-                    {
-                        PointF cross = new PointF();
-                        if (MyExtensions.seg_cross(flat.P1, flat.P2, P1, p2, ref cross) == seg_cross_t.seg_crossing
-                            && MyExtensions.PointDistance(P1, cross) < MyExtensions.PointDistance(P1, closest))
-                        {
-                            closest = cross;
-                            Colliding = flat;
-                        }
-                    }
-                    else if (wall is SphericalMirror spherical)
-                    {
-
-                    }
+                    closest = intersection;
+                    Colliding = wall;
                 }
+            }
             P2 = new Point((int)closest.X, (int)closest.Y);
         }
 
         public LightBeam GenerateNext(Experiment experiment)
         {
+            if (Colliding == null)
+                return null;
             Point projection = MyExtensions.PointToSegmentProject(Colliding.P1, Colliding.P2, P1);
             Point simmetrical = new Point(projection.X + (projection.X - P1.X), projection.Y + (projection.Y - P1.Y));
             Next = new LightBeam(P2, new Point(P2.X + (P2.X - simmetrical.X), P2.Y + (P2.Y - simmetrical.Y)));

@@ -20,5 +20,10 @@ namespace MirrorsExperiment
             Pen pen = new Pen(Color.Black, 3);
             g.DrawLine(pen, P1, P2);
         }
+
+        public override bool Intersect(Point p1, Point p2, ref PointF intersection)
+        {
+            return MyExtensions.seg_cross(P1, P2, p1, p2, ref intersection) == seg_cross_t.seg_crossing;
+        }
     }
 }

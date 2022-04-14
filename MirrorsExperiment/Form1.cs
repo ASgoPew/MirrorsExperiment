@@ -25,16 +25,24 @@ namespace MirrorsExperiment
         // Расчет лучей по таймеру
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            LightBeam light = Experiment.Instances[drawPanel].LightSource;
-            int count = 0;
-            while (light.Next != null)
+            try
             {
-                light = light.Next;
-                count++;
+                LightBeam light = Experiment.Instances[drawPanel].LightSource;
+                int count = 0;
+                while (light.Next != null)
+                {
+                    light = light.Next;
+                    count++;
+                }
+                show($"light beams: {count}");
+                light.GenerateNext(Experiment.Instances[drawPanel]);
+                drawPanel.Invalidate();
+            } catch (Exception exc)
+            {
+                timer.Stop();
+                MessageBox.Show(exc.ToString());
+                Environment.Exit(1);
             }
-            show($"light beams: {count}");
-            light.GenerateNext(Experiment.Instances[drawPanel]);
-            drawPanel.Invalidate();
         }
 
         // Кнопка запуска моделирования
@@ -44,13 +52,12 @@ namespace MirrorsExperiment
                 timer.Stop();
             else
             {
-                source = null;
                 if (Experiment.Instances[drawPanel].LightSource is LightBeam light)
                 {
                     light.CalculateEnd(Experiment.Instances[drawPanel]);
                     drawPanel.Invalidate();
+                    timer.Start();
                 }
-                timer.Start();
             }
         }
 
@@ -58,21 +65,20 @@ namespace MirrorsExperiment
         private void drawPanel_Paint(object sender, PaintEventArgs e)
         {
             const int R = 5;
-            Pen pen = new Pen(Color.Black, 3);
             foreach (Wall wall in Experiment.Instances[sender].Room.Walls)
             {
                 e.Graphics.FillEllipse(Brushes.Red, wall.P1.X - R, wall.P1.Y - R, 2 * R, 2 * R);
                 wall.Draw(e.Graphics);
             }
             if (source is Point p)
-                e.Graphics.DrawLine(pen, p, old);
+                e.Graphics.DrawLine(new Pen(Color.Black, 5), p, sourceEnd.Value);
             if (tmp != null)
                 e.Graphics.DrawString(tmp, SystemFonts.DefaultFont, Brushes.Black, 100, 30);
             if (Experiment.Instances[sender].LightSource is LightBeam light)
             {
                 while (light != null)
                 {
-                    e.Graphics.DrawLine(new Pen(Color.DeepSkyBlue, 2), light.P1, light.P2);
+                    e.Graphics.DrawLine(light.Next == null ? new Pen(Color.Red, 6) : new Pen(Color.DeepSkyBlue, 2), light.P1, light.P2);
                     light = light.Next;
                 }
             }
@@ -90,6 +96,7 @@ namespace MirrorsExperiment
         private Point old;
         private int segmentIndex = -1;
         private Point? source = null;
+        private Point? sourceEnd = null;
         // Обработка начала нажатия
         private void drawPanel_MouseDown(object sender, MouseEventArgs e)
         {
@@ -101,6 +108,7 @@ namespace MirrorsExperiment
                 Point p2 = Experiment.Instances[sender].Room.Walls[i].P1;
                 if (MyExtensions.PointDistance(p1, p2) < R && e.Button.HasFlag(MouseButtons.Left))
                 {
+                    Reset();
                     down = true;
                     pointIndex = i;
                     old = p1;
@@ -118,6 +126,7 @@ namespace MirrorsExperiment
                     {
                         if (e.Button.HasFlag(MouseButtons.Left))
                         {
+                            Reset();
                             down = true;
                             segmentIndex = i;
                             old = p1;
@@ -125,6 +134,7 @@ namespace MirrorsExperiment
                         }
                         else if (e.Button.HasFlag(MouseButtons.Middle))
                         {
+                            Reset();
                             Experiment.Instances[sender].Room.Walls[i] = new FlatMirror(mirror.P1, mirror.P2);
                             drawPanel.Invalidate();
                             return;
@@ -143,6 +153,7 @@ namespace MirrorsExperiment
                         Point p4 = MyExtensions.PointToSegmentProject(p2, p3, p1);
                         if (MyExtensions.PointInRect(p4, p2, p3) && MyExtensions.PointDistance(p1, p4) < R)
                         {
+                            Reset();
                             Experiment.Instances[sender].Room.Walls[i] = new SphericalMirror(p2, p3, 10000);
                             drawPanel.Invalidate();
                             return;
@@ -154,7 +165,8 @@ namespace MirrorsExperiment
             {
                 down = true;
                 source = e.Location;
-                old = e.Location;
+                sourceEnd = e.Location;
+                //old = e.Location;
             }
         }
 
@@ -188,6 +200,7 @@ namespace MirrorsExperiment
                 }
                 else if (source != null)
                 {
+                    sourceEnd = e.Location;
                     drawPanel.Invalidate();
                 }
                 old = e.Location;
@@ -200,22 +213,41 @@ namespace MirrorsExperiment
             down = false;
             pointIndex = -1;
             segmentIndex = -1;
-            if (source is Point lightSource)
+            if (e.Button.HasFlag(MouseButtons.Right) && source is Point lightSource)
             {
-                if (MyExtensions.PointDistance(e.Location, lightSource) < 10) {
+                if (MyExtensions.PointDistance(e.Location, lightSource) < 10)
+                {
                     source = null;
-                    Experiment.Instances[sender].LightSource = null;
-                    drawPanel.Invalidate();
+                    Reset();
                 }
                 else
                 {
+                    sourceEnd = e.Location;
                     Experiment.Instances[sender].LightSource = new LightBeam(lightSource, e.Location);
                     Experiment.Instances[sender].LightSource.CalculateEnd(Experiment.Instances[sender]);
                     drawPanel.Invalidate();
                 }
             }
-            else
-                Experiment.Instances[sender].LightSource = null;
+        }
+
+        private void trackBar1_ValueChanged(object sender, EventArgs e)
+        {
+            source = null;
+            timer.Stop();
+            Experiment.Instances[drawPanel].Initialize(drawPanel, trackBar1.Value);
+            Reset();
+        }
+
+        private void Reset()
+        {
+            timer.Stop();
+            Experiment.Instances[drawPanel].LightSource = null;
+            if (source is Point p1 && sourceEnd is Point p2)
+            {
+                Experiment.Instances[drawPanel].LightSource = new LightBeam(p1, p2);
+                Experiment.Instances[drawPanel].LightSource.CalculateEnd(Experiment.Instances[drawPanel]);
+            }
+            drawPanel.Invalidate();
         }
     }
 }

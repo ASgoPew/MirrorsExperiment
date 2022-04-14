@@ -66,5 +66,10 @@ namespace MirrorsExperiment
             P3 = new Point((int)(CircleCenter.X + nx * t2), (int)(CircleCenter.Y + ny * t2));
             g.DrawEllipse(new Pen(Color.Red, 0.5f), P3.X - P3delta, P3.Y - P3delta, 2 * P3delta, 2 * P3delta);
         }
+
+        public override bool Intersect(Point p1, Point p2, ref PointF intersection)
+        {
+            return false;
+        }
     }
 }
