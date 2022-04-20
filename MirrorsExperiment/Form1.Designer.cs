@@ -63,7 +63,7 @@ namespace MirrorsExperiment
             // button1
             // 
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button1.Location = new System.Drawing.Point(20, 391);
+            this.button1.Location = new System.Drawing.Point(20, 683);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(140, 35);
             this.button1.TabIndex = 3;
@@ -73,7 +73,7 @@ namespace MirrorsExperiment
             // button2
             // 
             this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button2.Location = new System.Drawing.Point(184, 391);
+            this.button2.Location = new System.Drawing.Point(184, 683);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(140, 35);
             this.button2.TabIndex = 4;
@@ -98,7 +98,7 @@ namespace MirrorsExperiment
             this.drawPanel.BackColor = System.Drawing.SystemColors.ButtonHighlight;
             this.drawPanel.Location = new System.Drawing.Point(382, 21);
             this.drawPanel.Name = "drawPanel";
-            this.drawPanel.Size = new System.Drawing.Size(460, 416);
+            this.drawPanel.Size = new System.Drawing.Size(952, 708);
             this.drawPanel.TabIndex = 6;
             this.drawPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.drawPanel_Paint);
             this.drawPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.drawPanel_MouseDown);
@@ -109,7 +109,7 @@ namespace MirrorsExperiment
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(854, 449);
+            this.ClientSize = new System.Drawing.Size(1346, 741);
             this.Controls.Add(this.drawPanel);
             this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.button2);

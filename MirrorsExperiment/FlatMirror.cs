@@ -21,9 +21,24 @@ namespace MirrorsExperiment
             g.DrawLine(pen, P1, P2);
         }
 
-        public override bool Intersect(Point p1, Point p2, ref PointF intersection)
+        public override bool Intersect(Point p1, Point p2, List<PointF> intersections)
         {
-            return MyExtensions.seg_cross(P1, P2, p1, p2, ref intersection) == seg_cross_t.seg_crossing;
+            PointF intersection = new PointF();
+            if (MyExtensions.seg_cross(P1, P2, p1, p2, ref intersection) == seg_cross_t.seg_crossing)
+            {
+                intersections.Add(intersection);
+                return true;
+            }
+            return false;
+        }
+
+        public override Point Reflect(Point p1, Point p2)
+        {
+            Point projection = new Point();
+            if (!MyExtensions.PointToSegmentProject(P1, P2, p1, ref projection))
+                throw new Exception();
+            Point simmetrical = new Point(projection.X + (projection.X - p1.X), projection.Y + (projection.Y - p1.Y));
+            return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
         }
     }
 }

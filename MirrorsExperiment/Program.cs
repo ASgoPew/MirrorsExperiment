@@ -24,7 +24,8 @@ namespace MirrorsExperiment
             Application.SetCompatibleTextRenderingDefault(false);
 
             Form1 form1 = new Form1();
-            Experiment experiment = new Experiment(form1.drawPanel, 4);
+            form1.WindowState = FormWindowState.Maximized;
+            Experiment experiment = new Experiment(form1, 4);
 
             Application.Run(form1);
         }

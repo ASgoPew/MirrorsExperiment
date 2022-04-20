@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace MirrorsExperiment
@@ -32,6 +33,12 @@ namespace MirrorsExperiment
         public void CalculateEnd(Experiment experiment)
         {
             const int VectorLen = 10000;
+            if (double.IsNaN(Angle))
+            {
+                P2 = new Point(-VectorLen, -VectorLen);
+                return;
+            }
+
             Point p2 = P1;
             p2.X += (int)(Math.Cos(Angle * Math.PI / 180) * VectorLen);
             p2.Y += (int)(Math.Sin(Angle * Math.PI / 180) * VectorLen);
@@ -40,24 +47,34 @@ namespace MirrorsExperiment
             PointF closest = p2;
             foreach (var wall in experiment.Room.Walls)
             {
-                PointF intersection = new PointF();
-                if (wall != CurrentWall && wall.Intersect(P1, p2, ref intersection)
-                    && MyExtensions.PointDistance(P1, intersection) < MyExtensions.PointDistance(P1, closest))
-                {
-                    closest = intersection;
-                    Colliding = wall;
-                }
+                List<PointF> intersections = new List<PointF>();
+                if ((wall != CurrentWall || wall is SphericalMirror)
+                        && wall.P1 != wall.P2
+                        && wall.Intersect(P1, p2, intersections))
+                    foreach (PointF intersection in intersections)
+                    {
+                        double dist = MyExtensions.PointDistance(P1, intersection);
+                        if (dist >= 1 && dist < MyExtensions.PointDistance(P1, closest))
+                        {
+                            closest = intersection;
+                            Colliding = wall;
+                        }
+                    }
             }
             P2 = new Point((int)closest.X, (int)closest.Y);
+            foreach (var wall in experiment.Room.Walls)
+                if (MyExtensions.PointDistance(wall.P1, closest) <= 1)
+                {
+                    Colliding = null;
+                    break;
+                }
         }
 
         public LightBeam GenerateNext(Experiment experiment)
         {
             if (Colliding == null)
                 return null;
-            Point projection = MyExtensions.PointToSegmentProject(Colliding.P1, Colliding.P2, P1);
-            Point simmetrical = new Point(projection.X + (projection.X - P1.X), projection.Y + (projection.Y - P1.Y));
-            Next = new LightBeam(P2, new Point(P2.X + (P2.X - simmetrical.X), P2.Y + (P2.Y - simmetrical.Y)));
+            Next = new LightBeam(P2, Colliding.Reflect(P1, P2));
             Next.CurrentWall = Colliding;
             Next.CalculateEnd(experiment);
             return Next;

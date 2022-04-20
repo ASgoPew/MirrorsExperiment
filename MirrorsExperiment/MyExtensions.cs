@@ -26,15 +26,16 @@ namespace MirrorsExperiment
         }
 
         // Проекция точки на прямую
-        public static Point PointToSegmentProject(Point line1, Point line2, Point toProject)
+        public static bool PointToSegmentProject(Point line1, Point line2, Point toProject, ref Point project)
         {
-            double m = (double)(line2.Y - line1.Y) / (line2.X - line1.X);
-            double b = (double)line1.Y - (m * line1.X);
-
-            double x = (m * toProject.Y + toProject.X - m * b) / (m * m + 1);
-            double y = (m * m * toProject.Y + m * toProject.X + b) / (m * m + 1);
-
-            return new Point((int)x, (int)y);
+            float a = line2.Y - line1.Y;
+            float b = line1.X - line2.X;
+            if (a == 0 && b == 0)
+                return false;
+            float c = line1.Y * line2.X - line1.X * line2.Y;
+            float t = (-a * toProject.X - b * toProject.Y - c) / (a * a + b * b);
+            project = new Point((int)(toProject.X + a * t), (int)(toProject.Y + b * t));
+            return true;
         }
 
         // Расстояние между точками

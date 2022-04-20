@@ -21,6 +21,8 @@ namespace MirrorsExperiment
         public Point P3;
         public const int P3delta = 10;
         public PointF CircleCenter;
+        public float AngleBegin;
+        public float AngleDiff;
 
         public SphericalMirror(Point p1, Point p2, int radius = 1000)
             : base(p1, p2)
@@ -54,22 +56,72 @@ namespace MirrorsExperiment
             float angle2 = (float)(Math.Acos(cos2) * 180 / Math.PI);
             if (sin2 < 0)
                 angle2 = 360 - angle2;
-            float angleBegin = angle1 >= angle2 && angle1 - angle2 <= 180 || angle1 < angle2 && angle2 - angle1 > 180
+            AngleBegin = angle1 >= angle2 && angle1 - angle2 <= 180 || angle1 < angle2 && angle2 - angle1 > 180
                 ? angle2
                 : angle1;
-            float angleDiff = Math.Min(Math.Abs(angle1 - angle2), 360 - Math.Abs(angle1 - angle2));
+            AngleDiff = Math.Min(Math.Abs(angle1 - angle2), 360 - Math.Abs(angle1 - angle2));
 
             g.DrawArc(pen, (int)(CircleCenter.X - R), (int)(CircleCenter.Y - R), (int)(2 * R), (int)(2 * R),
-                angleBegin, angleDiff);
+                AngleBegin, AngleDiff);
+            g.DrawEllipse(new Pen(Color.Black, 0.4f), (int)(CircleCenter.X - R), (int)(CircleCenter.Y - R), (int)(2 * R), (int)(2 * R));
 
             float t2 = -(float)R / nLength;
             P3 = new Point((int)(CircleCenter.X + nx * t2), (int)(CircleCenter.Y + ny * t2));
             g.DrawEllipse(new Pen(Color.Red, 0.5f), P3.X - P3delta, P3.Y - P3delta, 2 * P3delta, 2 * P3delta);
         }
 
-        public override bool Intersect(Point p1, Point p2, ref PointF intersection)
+        public override bool Intersect(Point p1, Point p2, List<PointF> intersections)
         {
-            return false;
+            float R = Math.Abs(Radius);
+            float x0 = CircleCenter.X;
+            float y0 = CircleCenter.Y;
+            float a = p2.Y - p1.Y;
+            float b = p1.X - p2.X;
+            float c = p1.Y * p2.X - p1.X * p2.Y;
+            float alpha = -a / b;
+            float beta = -c / b - y0;
+            float a2 = 1 + alpha * alpha;
+            float a1 = 2 * (-x0 + alpha * beta);
+            float a0 = x0 * x0 + beta * beta - R * R;
+            float D = a1 * a1 - 4 * a2 * a0;
+            if (MyExtensions._less(D, 0))
+                return false;
+            List<PointF> result = new List<PointF>();
+            float x1 = (-a1 + (float)Math.Sqrt(D)) / (2 * a2);
+            float y1 = (-a * x1 - c) / b;
+            result.Add(new PointF(x1, y1));
+            float x2 = (-a1 - (float)Math.Sqrt(D)) / (2 * a2);
+            float y2 = (-a * x2 - c) / b;
+            result.Add(new PointF(x2, y2));
+
+            foreach (var p in result)
+            {
+                float cos = (p.X - CircleCenter.X) / R;
+                float sin = (p.Y - CircleCenter.Y) / R;
+                float angle = (float)(Math.Acos(cos) * 180 / Math.PI);
+                if (sin < 0)
+                    angle = 360 - angle;
+
+                if (MyExtensions.point_in_rect(p1, p2, p)
+                        && ((AngleBegin + AngleDiff < 360 && angle >= AngleBegin && angle <= AngleBegin + AngleDiff)
+                        || (AngleBegin + AngleDiff >= 360 && (angle >= AngleBegin || angle <= AngleBegin + AngleDiff - 360))))
+                    intersections.Add(p);
+            }
+            return true;
+        }
+
+        public override Point Reflect(Point p1, Point p2)
+        {
+            float nx = p2.X - CircleCenter.X;
+            float ny = p2.Y - CircleCenter.Y;
+            Point tangent1 = p2;
+            Point tangent2 = new Point(p2.X + (int)(ny * 10000), p2.Y - (int)(nx * 10000));
+
+            Point projection = new Point();
+            if (!MyExtensions.PointToSegmentProject(tangent1, tangent2, p1, ref projection))
+                throw new Exception();
+            Point simmetrical = new Point(projection.X + (projection.X - p1.X), projection.Y + (projection.Y - p1.Y));
+            return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
         }
     }
 }
