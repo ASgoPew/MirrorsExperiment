@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -14,50 +15,25 @@ namespace MirrorsExperiment
     public partial class Form1 : Form
     {
         public Experiment Experiment;
-        public System.Timers.Timer timer = new System.Timers.Timer(10);
 
         public Form1()
         {
             InitializeComponent();
             drawPanel.SetDoubleBuffered();
-            timer.Elapsed += Timer_Elapsed;
-        }
-
-        // Расчет лучей по таймеру
-        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            try
-            {
-                LightBeam light = Experiment.LightSource;
-                int count = 0;
-                while (light.Next != null)
-                {
-                    light = light.Next;
-                    count++;
-                }
-                show($"light beams: {count}");
-                light.GenerateNext(Experiment);
-                drawPanel.Invalidate();
-            } catch (Exception exc)
-            {
-                timer.Stop();
-                MessageBox.Show(exc.ToString());
-                Environment.Exit(1);
-            }
         }
 
         // Кнопка запуска моделирования
         private void buttonStart_Click(object sender, EventArgs e)
         {
-            if (timer.Enabled)
-                timer.Stop();
+            if (Experiment.timer.Enabled)
+                Experiment.timer.Stop();
             else
             {
                 if (Experiment.LightSource is LightBeam light)
                 {
                     light.CalculateEnd(Experiment);
                     drawPanel.Invalidate();
-                    timer.Start();
+                    Experiment.timer.Start();
                 }
             }
         }
@@ -92,7 +68,7 @@ namespace MirrorsExperiment
         }
 
         private string tmp = null;
-        private void show(string text)
+        public void show(string text)
         {
             tmp = text;
             drawPanel.Invalidate();
@@ -142,7 +118,7 @@ namespace MirrorsExperiment
                         else if (e.Button.HasFlag(MouseButtons.Middle))
                         {
                             Reset();
-                            Experiment.Room.Walls[i] = new FlatMirror(mirror.P1, mirror.P2);
+                            Experiment.Room.ChangeWallType(i);
                             drawPanel.Invalidate();
                             return;
                         }
@@ -163,7 +139,7 @@ namespace MirrorsExperiment
                             && MyExtensions.PointDistance(p1, p4) < R)
                         {
                             Reset();
-                            Experiment.Room.Walls[i] = new SphericalMirror(p2, p3, 10000);
+                            Experiment.Room.ChangeWallType(i);
                             drawPanel.Invalidate();
                             return;
                         }
@@ -245,14 +221,14 @@ namespace MirrorsExperiment
         private void trackBar1_ValueChanged(object sender, EventArgs e)
         {
             source = null;
-            timer.Stop();
+            Experiment.timer.Stop();
             Experiment.Initialize(trackBar1.Value, drawPanel.Width, drawPanel.Height);
             Reset();
         }
 
         private void Reset()
         {
-            timer.Stop();
+            Experiment.timer.Stop();
             Experiment.LightSource = null;
             if (source is Point p1 && sourceEnd is Point p2)
             {
@@ -260,6 +236,63 @@ namespace MirrorsExperiment
                 Experiment.LightSource.CalculateEnd(Experiment);
             }
             drawPanel.Invalidate();
+        }
+
+        private void trackBar2_ValueChanged(object sender, EventArgs e)
+        {
+            Experiment.PointStopDistance = trackBar2.Value;
+        }
+
+        private void trackBar3_ValueChanged(object sender, EventArgs e)
+        {
+            if (trackBar3.Value == 0)
+            {
+                Experiment.Instant = true;
+                numericUpDown1.Enabled = true;
+            }
+            else
+            {
+                Experiment.Instant = false;
+                numericUpDown1.Enabled = false;
+                Experiment.timer.Interval = trackBar3.Value;
+            }
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            Experiment.InstantSteps = (int)numericUpDown1.Value;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                using (Stream s = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.Write))
+                using (BinaryWriter bw = new BinaryWriter(s))
+                {
+                    bw.Write((int)Experiment.Room.Walls.Count);
+                    foreach (var wall in Experiment.Room.Walls)
+                        wall.Write(bw);
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                Experiment.Room.Walls.Clear();
+                using (Stream s = dialog.OpenFile())
+                using (BinaryReader br = new BinaryReader(s))
+                {
+                    int count = br.ReadInt32();
+                    for (int i = 0; i < count; i++)
+                        Experiment.Room.Walls.Add(Wall.Read(Experiment, br));
+                }
+                drawPanel.Invalidate();
+            }
         }
     }
 }

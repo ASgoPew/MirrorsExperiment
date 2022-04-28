@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,8 @@ namespace MirrorsExperiment
         public PointF CircleCenter;
         public float AngleBegin;
         public float AngleDiff;
+
+        public SphericalMirror() {}
 
         public SphericalMirror(Point p1, Point p2, int radius = 1000)
             : base(p1, p2)
@@ -63,7 +66,7 @@ namespace MirrorsExperiment
 
             g.DrawArc(pen, (int)(CircleCenter.X - R), (int)(CircleCenter.Y - R), (int)(2 * R), (int)(2 * R),
                 AngleBegin, AngleDiff);
-            g.DrawEllipse(new Pen(Color.Black, 0.4f), (int)(CircleCenter.X - R), (int)(CircleCenter.Y - R), (int)(2 * R), (int)(2 * R));
+            //g.DrawEllipse(new Pen(Color.Black, 0.4f), (int)(CircleCenter.X - R), (int)(CircleCenter.Y - R), (int)(2 * R), (int)(2 * R));
 
             float t2 = -(float)R / nLength;
             P3 = new Point((int)(CircleCenter.X + nx * t2), (int)(CircleCenter.Y + ny * t2));
@@ -72,27 +75,47 @@ namespace MirrorsExperiment
 
         public override bool Intersect(Point p1, Point p2, List<PointF> intersections)
         {
+            List<PointF> result = new List<PointF>();
             float R = Math.Abs(Radius);
             float x0 = CircleCenter.X;
             float y0 = CircleCenter.Y;
             float a = p2.Y - p1.Y;
             float b = p1.X - p2.X;
             float c = p1.Y * p2.X - p1.X * p2.Y;
-            float alpha = -a / b;
-            float beta = -c / b - y0;
-            float a2 = 1 + alpha * alpha;
-            float a1 = 2 * (-x0 + alpha * beta);
-            float a0 = x0 * x0 + beta * beta - R * R;
-            float D = a1 * a1 - 4 * a2 * a0;
-            if (MyExtensions._less(D, 0))
-                return false;
-            List<PointF> result = new List<PointF>();
-            float x1 = (-a1 + (float)Math.Sqrt(D)) / (2 * a2);
-            float y1 = (-a * x1 - c) / b;
-            result.Add(new PointF(x1, y1));
-            float x2 = (-a1 - (float)Math.Sqrt(D)) / (2 * a2);
-            float y2 = (-a * x2 - c) / b;
-            result.Add(new PointF(x2, y2));
+            if (p1.X != p2.X)
+            {
+                float alpha = -a / b;
+                float beta = -c / b - y0;
+                float a2 = 1 + alpha * alpha;
+                float a1 = 2 * (-x0 + alpha * beta);
+                float a0 = x0 * x0 + beta * beta - R * R;
+                float D = a1 * a1 - 4 * a2 * a0;
+                if (MyExtensions._less(D, 0))
+                    return false;
+                float x1 = (-a1 + (float)Math.Sqrt(D)) / (2 * a2);
+                float y1 = (-a * x1 - c) / b;
+                result.Add(new PointF(x1, y1));
+                float x2 = (-a1 - (float)Math.Sqrt(D)) / (2 * a2);
+                float y2 = (-a * x2 - c) / b;
+                result.Add(new PointF(x2, y2));
+            }
+            else
+            {
+                float alpha = -b / a;
+                float beta = -c / a - x0;
+                float a2 = 1 + alpha * alpha;
+                float a1 = 2 * (-y0 + alpha * beta);
+                float a0 = y0 * y0 + beta * beta - R * R;
+                float D = a1 * a1 - 4 * a2 * a0;
+                if (MyExtensions._less(D, 0))
+                    return false;
+                float y1 = (-a1 + (float)Math.Sqrt(D)) / (2 * a2);
+                float x1 = (-b * y1 - c) / a;
+                result.Add(new PointF(x1, y1));
+                float y2 = (-a1 - (float)Math.Sqrt(D)) / (2 * a2);
+                float x2 = (-b * y2 - c) / a;
+                result.Add(new PointF(x2, y2));
+            }
 
             foreach (var p in result)
             {
@@ -102,10 +125,14 @@ namespace MirrorsExperiment
                 if (sin < 0)
                     angle = 360 - angle;
 
-                if (MyExtensions.point_in_rect(p1, p2, p)
+                if (MyExtensions.PointDistance(p, p1) > Experiment.PointStopDistance
+                        && MyExtensions.point_in_rect(p1, p2, p)
                         && ((AngleBegin + AngleDiff < 360 && angle >= AngleBegin && angle <= AngleBegin + AngleDiff)
                         || (AngleBegin + AngleDiff >= 360 && (angle >= AngleBegin || angle <= AngleBegin + AngleDiff - 360))))
+                {
+                    //File.AppendAllText("test.txt", $"dist {p} - {p1}: {MyExtensions.PointDistance(p, p1)} vs {Experiment.PointStopDistance}\n");
                     intersections.Add(p);
+                }
             }
             return true;
         }
@@ -115,13 +142,26 @@ namespace MirrorsExperiment
             float nx = p2.X - CircleCenter.X;
             float ny = p2.Y - CircleCenter.Y;
             Point tangent1 = p2;
-            Point tangent2 = new Point(p2.X + (int)(ny * 10000), p2.Y - (int)(nx * 10000));
+            Point tangent2 = new Point(p2.X + (int)(ny * 1000), p2.Y - (int)(nx * 1000));
 
             Point projection = new Point();
             if (!MyExtensions.PointToSegmentProject(tangent1, tangent2, p1, ref projection))
                 throw new Exception();
             Point simmetrical = new Point(projection.X + (projection.X - p1.X), projection.Y + (projection.Y - p1.Y));
             return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
+        }
+
+        public override void Write(BinaryWriter bw)
+        {
+            bw.Write((byte)1);
+            base.Write(bw);
+            bw.Write((float)Radius);
+        }
+
+        public override void Read(BinaryReader br)
+        {
+            base.Read(br);
+            Radius = br.ReadSingle();
         }
     }
 }

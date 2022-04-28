@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 
 namespace MirrorsExperiment
 {
@@ -53,6 +54,7 @@ namespace MirrorsExperiment
                         && wall.Intersect(P1, p2, intersections))
                     foreach (PointF intersection in intersections)
                     {
+                        //File.AppendAllText("test.txt", String.Join(", ", intersections) + "\n");
                         double dist = MyExtensions.PointDistance(P1, intersection);
                         if (dist >= 1 && dist < MyExtensions.PointDistance(P1, closest))
                         {
@@ -63,7 +65,7 @@ namespace MirrorsExperiment
             }
             P2 = new Point((int)closest.X, (int)closest.Y);
             foreach (var wall in experiment.Room.Walls)
-                if (MyExtensions.PointDistance(wall.P1, closest) <= 1)
+                if (MyExtensions.PointDistance(wall.P1, closest) <= experiment.PointStopDistance)
                 {
                     Colliding = null;
                     break;

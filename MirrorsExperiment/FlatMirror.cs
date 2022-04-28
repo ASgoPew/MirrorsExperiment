@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,10 +10,11 @@ namespace MirrorsExperiment
 {
     public class FlatMirror : Wall
     {
+        public FlatMirror() {}
+
         public FlatMirror(Point p1, Point p2)
             : base(p1, p2)
         {
-
         }
 
         public override void Draw(Graphics g)
@@ -39,6 +41,12 @@ namespace MirrorsExperiment
                 throw new Exception();
             Point simmetrical = new Point(projection.X + (projection.X - p1.X), projection.Y + (projection.Y - p1.Y));
             return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
+        }
+
+        public override void Write(BinaryWriter bw)
+        {
+            bw.Write((byte)0);
+            base.Write(bw);
         }
     }
 }

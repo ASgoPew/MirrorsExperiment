@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,16 +11,24 @@ namespace MirrorsExperiment
 {
     public class Experiment
     {
+        public Form1 Form = null;
+        public System.Timers.Timer timer = new System.Timers.Timer();
         public Random Random = new Random();
-        public Room Room = new Room();
+        public Room Room;
         public LightBeam LightSource = null;
+        public int PointStopDistance = 2;
+        public bool Instant = false;
+        public int InstantSteps = 10;
 
         // Инициализация комнаты начальными параметрами
         public Experiment(Form1 form, int wallsCount)
         {
-            form.Experiment = this;
-            Panel drawPanel = form.drawPanel;
-            Initialize(wallsCount, drawPanel.Width, drawPanel.Height);
+            Form = form;
+            Form.Experiment = this;
+            Room = new Room(this);
+            Initialize(wallsCount, Form.drawPanel.Width, Form.drawPanel.Height);
+            timer.Interval = 10;
+            timer.Elapsed += Timer_Elapsed;
         }
 
         public void Initialize(int wallsCount, int width, int height)
@@ -39,10 +48,50 @@ namespace MirrorsExperiment
                     p2 = new Point(center.X + (int)(Math.Cos(phi) * r), center.Y + (int)(Math.Sin(phi) * r));
                 else
                     p2 = first;
-                Room.Walls.Add(new FlatMirror(p1, p2));
+                Room.AddWall(new FlatMirror(p1, p2));
                 p1 = p2;
                 phi += _phi;
             }
+
+            //File.WriteAllText("test.txt", "");
+        }
+
+        // Расчет лучей по таймеру
+        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                if (Instant)
+                {
+                    timer.Stop();
+                    for (int i = 0; i < InstantSteps; i++)
+                        GenerateNextLightBeam();
+                    return;
+                }
+
+                GenerateNextLightBeam();
+            }
+            catch (Exception exc)
+            {
+                timer.Stop();
+                MessageBox.Show(exc.ToString());
+                Environment.Exit(1);
+            }
+        }
+
+        private void GenerateNextLightBeam()
+        {
+            LightBeam light = LightSource;
+            int count = 1;
+            while (light.Next != null)
+            {
+                light = light.Next;
+                count++;
+            }
+            light.GenerateNext(this);
+            //light = light.Next;
+            Form.show($"light beams: {count + 1}");//, last: {light?.P1} -> {light?.P2}");
+            Form.drawPanel.Invalidate();
         }
     }
 }
