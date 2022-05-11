@@ -17,12 +17,14 @@ namespace MirrorsExperiment
         {
         }
 
+        // Отрисовка стены
         public override void Draw(Graphics g)
         {
             Pen pen = new Pen(Color.Black, 3);
             g.DrawLine(pen, P1, P2);
         }
 
+        // Пересечение стены лучём
         public override bool Intersect(Point p1, Point p2, List<PointF> intersections)
         {
             PointF intersection = new PointF();
@@ -34,6 +36,7 @@ namespace MirrorsExperiment
             return false;
         }
 
+        // Отражение вектора относительно стены
         public override Point Reflect(Point p1, Point p2)
         {
             Point projection = new Point();
@@ -43,6 +46,7 @@ namespace MirrorsExperiment
             return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
         }
 
+        // Запись стены в поток данных
         public override void Write(BinaryWriter bw)
         {
             bw.Write((byte)0);

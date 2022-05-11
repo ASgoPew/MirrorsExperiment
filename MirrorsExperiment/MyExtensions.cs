@@ -9,12 +9,16 @@ using System.Windows.Forms;
 
 namespace MirrorsExperiment
 {
+    // Тип пересечения отрезка
     public enum seg_cross_t { seg_crossing = 1, seg_collide, seg_nocross };
+    // Тип ориентации относительно отрезка
     public enum turn_t { left = 1, right = -1, collinear = 0 };
+    // Тип положения точки относительно контура
     public enum point_loc_t { inside, outside };
 
     public static class MyExtensions
     {
+        // Установка двойной буферизации отрисовки
         public static void SetDoubleBuffered(this Panel panel)
         {
             typeof(Panel).InvokeMember(
@@ -48,6 +52,7 @@ namespace MirrorsExperiment
             return Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
         }
 
+        // Положение точки относительно прямой
         public static int LineSide(Point line1, Point line2, Point p)
         {
             float result = (line2.Y - line1.Y) * p.X + (line1.X - line2.X) * p.Y +
@@ -66,9 +71,11 @@ namespace MirrorsExperiment
                 p.Y <= ymax && p.Y >= ymin;
         }
 
+        // Константы вычислительной погрешности
         const double eps_precision_compare_double = 1e-09;
         public static double machine_epsilon = 1.0d;
 
+        // Сравнение двух вещественных
         public static bool _equal(double x, double y)
         {
             return (Math.Abs(x - y) <= eps_precision_compare_double);
@@ -82,6 +89,7 @@ namespace MirrorsExperiment
             return x >= y - eps_precision_compare_double;
         }
 
+        // Вычисление положения точки относительно отрезка
         public static turn_t turn(PointF a, PointF b, PointF c)
         {
             double l = (b.X - a.X) * (c.Y - a.Y);
@@ -100,6 +108,7 @@ namespace MirrorsExperiment
             return turn_t.collinear;
         }
 
+        // Вычисление вспомогательной дельты
         public static (float X, float Y, float Z) calc_delta(PointF a, PointF b, PointF c, PointF d)
         {
             return ((b.X - a.X) * (c.Y - d.Y) - (c.X - d.X) * (b.Y - a.Y),
@@ -107,6 +116,7 @@ namespace MirrorsExperiment
                           (b.X - a.X) * (c.Y - a.Y) - (c.X - a.X) * (b.Y - a.Y));
         }
 
+        // Вычисление детерминанта
         public static PointF det(PointF a, PointF b)
         {
             float l = a.X * b.Y;
@@ -117,11 +127,13 @@ namespace MirrorsExperiment
             return new PointF(l - r, e);
         }
 
+        // Вычисление формулы уравнения через две точки
         public static (float X, float Y, float Z) equation(PointF a, PointF b)
         {
             return (a.Y - b.Y, b.X - a.X, a.X * (b.Y - a.Y) + a.Y * (a.X - b.X));
         }
 
+        // Ранг матрицы
         public static int rank((float X, float Y, float Z) a, (float X, float Y, float Z) b)
         {
             PointF det1 = det(new PointF(a.X, a.Y), new PointF(b.X, b.Y));
@@ -129,6 +141,7 @@ namespace MirrorsExperiment
             return _equal(det1.X, 0) && _equal(det2.X, 0) ? 1 : 2;
         }
 
+        // Проверка вложенности точки в прямоугольник
         public static bool point_in_rect(PointF rect1, PointF rect2, PointF a)
         {
             double xmax = Math.Max(rect1.X, rect2.X), xmin = Math.Min(rect1.X, rect2.X), ymax = Math.Max(rect1.Y, rect2.Y), ymin = Math.Min(rect1.Y, rect2.Y);
@@ -136,6 +149,7 @@ namespace MirrorsExperiment
                     _less(a.Y, ymax) && _more(a.Y, ymin));
         }
 
+        // Пересечение отрезков
         public static seg_cross_t seg_cross(PointF a, PointF b, PointF c, PointF d, ref PointF result)
         {
             if (a == b && c == d)
@@ -208,13 +222,6 @@ namespace MirrorsExperiment
                 else
                     return seg_cross_t.seg_nocross;
             }
-        }
-
-        public static point_loc_t point_in_seg(PointF a, PointF b, PointF c)
-        {
-            PointF _ = new PointF();
-            seg_cross_t type = seg_cross(a, b, c, c, ref _);
-            return type == seg_cross_t.seg_collide || type == seg_cross_t.seg_crossing ? point_loc_t.inside : point_loc_t.outside;
         }
     }
 }

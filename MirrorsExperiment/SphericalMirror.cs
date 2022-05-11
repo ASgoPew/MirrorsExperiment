@@ -12,6 +12,7 @@ namespace MirrorsExperiment
     public class SphericalMirror : Wall
     {
         private float _Radius = 1000;
+        // Радиус кривизны
         public float Radius
         {
             get => _Radius;
@@ -19,10 +20,15 @@ namespace MirrorsExperiment
                 ? (float)Math.Min(Math.Max(value,  (MyExtensions.PointDistance(P1, P2) / 2f + 0.2)), 10000)
                 : (float)Math.Max(Math.Min(value, -(MyExtensions.PointDistance(P1, P2) / 2f + 0.2)), -10000);
         }
+        // Точка середины дуги
         public Point P3;
+        // Радиус зоны взаимодействия с центром дуги
         public const int P3delta = 10;
+        // Точка центра окружности
         public PointF CircleCenter;
+        // Начальное значение угла в радианах
         public float AngleBegin;
+        // Конечное значение угла в радианах
         public float AngleDiff;
 
         public SphericalMirror() {}
@@ -33,6 +39,7 @@ namespace MirrorsExperiment
             Radius = radius;
         }
 
+        // Отрисовка стены
         public override void Draw(Graphics g)
         {
             //Radius = (float)(MyExtensions.PointDistance(P1, P2) / 2f + 0.1);
@@ -73,6 +80,7 @@ namespace MirrorsExperiment
             g.DrawEllipse(new Pen(Color.Red, 0.5f), P3.X - P3delta, P3.Y - P3delta, 2 * P3delta, 2 * P3delta);
         }
 
+        // Пересечение стены лучём
         public override bool Intersect(Point p1, Point p2, List<PointF> intersections)
         {
             List<PointF> result = new List<PointF>();
@@ -137,6 +145,7 @@ namespace MirrorsExperiment
             return true;
         }
 
+        // Отражение вектора относительно стены
         public override Point Reflect(Point p1, Point p2)
         {
             float nx = p2.X - CircleCenter.X;
@@ -151,17 +160,19 @@ namespace MirrorsExperiment
             return new Point(p2.X + (p2.X - simmetrical.X), p2.Y + (p2.Y - simmetrical.Y));
         }
 
+        // Чтение стены из потока данных
+        public override void Read(BinaryReader br)
+        {
+            base.Read(br);
+            Radius = br.ReadSingle();
+        }
+
+        // Запись стены в поток данных
         public override void Write(BinaryWriter bw)
         {
             bw.Write((byte)1);
             base.Write(bw);
             bw.Write((float)Radius);
-        }
-
-        public override void Read(BinaryReader br)
-        {
-            base.Read(br);
-            Radius = br.ReadSingle();
         }
     }
 }

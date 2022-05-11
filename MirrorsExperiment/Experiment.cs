@@ -11,16 +11,23 @@ namespace MirrorsExperiment
 {
     public class Experiment
     {
+        // Форма окна, которому соответствует эксперимент
         public Form1 Form = null;
+        // Таймер, по которому эксперимент создает новые лучи (если не мгновенные вычисления)
         public System.Timers.Timer timer = new System.Timers.Timer();
+        // Генератор случайных чисел
         public Random Random = new Random();
+        // Комната эксперимента
         public Room Room;
+        // Источник света, задаваемый пользователем
         public LightBeam LightSource = null;
+        // Расстояние, в пределах которого засчитывается попадание луча в угол комнаты
         public int PointStopDistance = 2;
+        // Мгновенно ли вычисляется эксперимент
         public bool Instant = false;
+        // Количество шагов эксперимента (если мгновенные вычисления)
         public int InstantSteps = 10;
 
-        // Инициализация комнаты начальными параметрами
         public Experiment(Form1 form, int wallsCount)
         {
             Form = form;
@@ -31,6 +38,7 @@ namespace MirrorsExperiment
             timer.Elapsed += Timer_Elapsed;
         }
 
+        // Инициализация комнаты начальными параметрами
         public void Initialize(int wallsCount, int width, int height)
         {
             Room.Walls.Clear();
@@ -79,6 +87,7 @@ namespace MirrorsExperiment
             }
         }
 
+        // Генерация следующего луча
         private void GenerateNextLightBeam()
         {
             LightBeam light = LightSource;

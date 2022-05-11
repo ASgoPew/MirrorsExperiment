@@ -7,11 +7,17 @@ namespace MirrorsExperiment
 {
     public class LightBeam
     {
+        // Начальная точка сегмента луча
         public Point P1;
+        // Конечная точка сегмента луча
         public Point P2;
+        // Стена, от которой сегмент луча оттолкнулся
         public Wall CurrentWall = null;
+        // Стена, в который сегмент луча уперся
         public Wall Colliding = null;
+        // Угол сегмента луча в радианах
         public double Angle;
+        // Ссылка на следующий сегмент луча
         public LightBeam Next = null;
 
         public LightBeam(Point p, double angle)
@@ -31,6 +37,7 @@ namespace MirrorsExperiment
                 Angle = 360 - Angle;
         }
 
+        // Рассчитать конечную точку сегмента луча
         public void CalculateEnd(Experiment experiment)
         {
             const int VectorLen = 10000;
@@ -72,6 +79,7 @@ namespace MirrorsExperiment
                 }
         }
 
+        // Сгенерировать следующий луч
         public LightBeam GenerateNext(Experiment experiment)
         {
             if (Colliding == null)

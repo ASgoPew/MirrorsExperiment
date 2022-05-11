@@ -4,7 +4,9 @@ namespace MirrorsExperiment
 {
     public class Room
     {
+        // Эксперимент, соответствующий комнате
         public Experiment Experiment;
+        // Список стен комнаты
         public List<Wall> Walls = new List<Wall>();
 
         public Room(Experiment experiment)
@@ -12,12 +14,14 @@ namespace MirrorsExperiment
             Experiment = experiment;
         }
 
+        // Добавление стены
         public void AddWall(Wall wall)
         {
             Walls.Add(wall);
             wall.Experiment = Experiment;
         }
 
+        // Изменение типа стены
         public void ChangeWallType(int index)
         {
             if (Walls[index] is SphericalMirror)
